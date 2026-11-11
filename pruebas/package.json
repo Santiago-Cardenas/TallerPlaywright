@@ -1,0 +1,13 @@
+{
+  "name": "pruebas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:aceptacion": "playwright test --grep @acceptanceTest",
+    "reporte": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
+  }
+}

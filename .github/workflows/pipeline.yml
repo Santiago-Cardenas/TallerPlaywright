@@ -1,0 +1,74 @@
+# Pipeline de pruebas de aceptación · HU-09 Programa de puntos
+# Levanta la app (app/) en el puerto 3000 y ejecuta los casos @acceptanceTest (pruebas/).
+# El job queda en verde solo si todas las pruebas pasan.
+name: pipeline
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pruebas-aceptacion:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descarga el código del commit (app y pruebas juntas: mono repo)
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      # 2. Node.js con caché de npm para ambas carpetas
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            app/package-lock.json
+            pruebas/package-lock.json
+
+      # 3. Instala exactamente lo que dice cada package-lock.json
+      - name: Instalar dependencias de la app
+        working-directory: app
+        run: npm ci
+
+      - name: Instalar dependencias de las pruebas
+        working-directory: pruebas
+        run: npm ci
+
+      # 4. Navegador y dependencias del sistema
+      - name: Instalar Chromium para Playwright
+        working-directory: pruebas
+        run: npx playwright install --with-deps chromium
+
+      # 5. Levanta la app en segundo plano (el & la deja corriendo)
+      - name: Levantar la app en el puerto 3000
+        working-directory: app
+        run: npm start &
+
+      # 6. No probar hasta que la app responda (máximo 30 s)
+      - name: Esperar a que la app responda
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null; then
+              echo "La app responde"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "La app no respondió en 30 segundos"
+          exit 1
+
+      # 7. Solo los casos de aceptación. Sin continue-on-error: si una prueba falla, el job falla.
+      - name: Ejecutar pruebas de aceptación
+        working-directory: pruebas
+        run: npx playwright test --grep @acceptanceTest
+
+      # 8. El reporte se sube siempre, también cuando las pruebas fallan
+      - name: Subir reporte de Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-playwright
+          path: pruebas/playwright-report/
+          retention-days: 14

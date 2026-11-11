@@ -1,0 +1,21 @@
+# Dependencias y variables de entorno
+node_modules/
+.env
+
+# Resultados de Playwright (se generan en cada ejecución)
+pruebas/test-results/
+pruebas/playwright-report/
+pruebas/playwright/.auth/
+
+# Material de la clase (no es parte de la entrega)
+guia-playwright_v1.md
+historias-de-usuario_elRinconDelCafe*.md
+instrucciones-ia-*.md
+
+# Archivos del sistema y del editor
+.vscode/
+.claude/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
